@@ -1,8 +1,9 @@
 # SetupMCP Excel.cmd
 
 Windows setup for Excel Live MCP (desktop Excel 2016+; Codex, Claude, Google Antigravity).
-This fork exists to publish the installer; the MCP server itself is installed from the official
-repository `kousunh/excel-mcp-server`.
+The installer and the MCP server both come from this fork. Upstream releases of
+`kousunh/excel-mcp-server` reach users only after they are merged into `main` here, so a broken
+upstream update can be held back.
 
 Run it as is: it requests administrator rights, and at every start it compares its own
 `$script:InstallerVersion` with this file on `main` and, when a newer valid version is published,

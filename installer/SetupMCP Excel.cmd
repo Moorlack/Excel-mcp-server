@@ -4,10 +4,10 @@ chcp 65001 >nul
 set "AECMB_PRODUCT=Excel"
 set "AECMB_TITLE=ExcelMcp setup"
 if /i "%~1"=="--self-updated" set "AECMB_SELF_UPDATED=1"
-title %AECMB_TITLE% v2026.11.03.03
+title %AECMB_TITLE% v2026.11.03.04
 
 echo.
-echo %AECMB_TITLE% v2026.11.03.03
+echo %AECMB_TITLE% v2026.11.03.04
 echo This script installs only the ExcelMcp bridge and preserves unrelated MCP servers.
 echo.
 
@@ -54,8 +54,8 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $StepNumber = 0
 # Keep in sync with the title/echo lines above; self-update compares this value.
-$script:InstallerVersion = '2026.11.03.03'
-# Published in the Moorlack/Excel-mcp-server fork (installer only; the server comes from kousunh/excel-mcp-server).
+$script:InstallerVersion = '2026.11.03.04'
+# Installer and server both come from the Moorlack/Excel-mcp-server fork, so an upstream release reaches users only after it is merged there.
 $script:InstallerUpdateUrl = 'https://raw.githubusercontent.com/Moorlack/Excel-mcp-server/main/installer/SetupMCP%20Excel.cmd'
 $BridgeName = 'excel-mcp'
 $InstallRoot = Join-Path $env:ProgramData 'ExcelMcp'
@@ -63,7 +63,7 @@ $SourceRoot = Join-Path $InstallRoot 'source'
 $VenvRoot = Join-Path $InstallRoot 'venv'
 $VenvPython = Join-Path $VenvRoot 'Scripts\python.exe'
 $ServerEntry = Join-Path $SourceRoot 'src\index.js'
-$RepoUrl = 'https://github.com/kousunh/excel-mcp-server.git'
+$RepoUrl = 'https://github.com/Moorlack/Excel-mcp-server.git'
 $RepoBranch = 'main'
 # Logs live outside InstallRoot so a complete removal can still write its log.
 $LogDirectory = Join-Path $env:ProgramData 'ExcelMcp-logs'
@@ -298,7 +298,7 @@ function Get-JsonSettings([string]$Path, [string]$Description) {
 function Save-JsonSettings($Settings) { [IO.File]::WriteAllText($Settings.Path, ($Settings.Root | ConvertTo-Json -Depth 100), [Text.UTF8Encoding]::new($false)) }
 
 function Get-ExcelUpdateStatus {
-    # Compares the installed source with the official repository without changing files.
+    # Compares the installed source with the maintained fork without changing files.
     $status = [pscustomobject]@{ State = 'Unknown'; Local = ''; Remote = ''; Detail = '' }
     if (-not (Test-Path -LiteralPath (Join-Path $SourceRoot '.git'))) { $status.State = 'NotInstalled'; return $status }
     $git = Get-CommandPath 'git.exe'
@@ -336,7 +336,7 @@ function Write-MenuOption([string]$Number, [string]$Label, [string]$Color, $Note
 function Sync-ExcelSource([string]$Git) {
     $safe = 'safe.directory=' + ($SourceRoot -replace '\\', '/')
     if (Test-Path -LiteralPath (Join-Path $SourceRoot '.git')) {
-        Invoke-CheckedProcess -FilePath $Git -Arguments @('-c', $safe, '-C', $SourceRoot, 'remote', 'set-url', 'origin', $RepoUrl) -Description 'Selecting the official Excel Live MCP repository'
+        Invoke-CheckedProcess -FilePath $Git -Arguments @('-c', $safe, '-C', $SourceRoot, 'remote', 'set-url', 'origin', $RepoUrl) -Description 'Selecting the maintained Excel Live MCP fork'
         $changes = Invoke-Quiet -FilePath $Git -Arguments @('-c', $safe, '-C', $SourceRoot, 'status', '--porcelain') -TimeoutMs 60000
         if ($changes.ExitCode -eq 0 -and $changes.Output) {
             $stashMessage = "ExcelMcp setup backup $(Get-Date -Format 'yyyyMMdd_HHmmss')"
@@ -483,7 +483,7 @@ function Install-ExcelMcp {
     Start-Step -Title 'Check Microsoft Excel' -Explanation 'Excel Live MCP connects to the workbook that is already open in desktop Excel through xlwings.'
     if (-not (Test-ExcelInstalled)) { throw 'Microsoft Excel 2016 or later was not detected. Install and activate desktop Excel, then run this script again.' }
     Write-Ok 'Microsoft Excel COM automation is available.'
-    Start-Step -Title 'Download or update Excel Live MCP' -Explanation 'The open-workbook bridge is installed from its official source with isolated Python dependencies.'
+    Start-Step -Title 'Download or update Excel Live MCP' -Explanation 'The open-workbook bridge is installed from the maintained fork with isolated Python dependencies.'
     $git=Ensure-Git; $python=Ensure-Python; Ensure-Node
     New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
     Sync-ExcelSource -Git $git
@@ -514,7 +514,7 @@ try {
         exit 75
     }
 
-    Write-Info 'Checking the installed Excel Live MCP version against the official repository...'
+    Write-Info 'Checking the installed Excel Live MCP version against the maintained fork...'
     $status = Get-ExcelUpdateStatus
     $note = Get-UpdateNote $status
     $noUpdates = $status.State -in @('UpToDate', 'LocalAhead')
